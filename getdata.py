@@ -71,6 +71,31 @@ prices_long = prices_long.rename(columns={'geo': 'NUTS0'})
 prices_long = prices_long.drop_duplicates(subset=['NUTS0', 'Year'])
 master_df = pd.merge(master_df, prices_long, on=['NUTS0', 'Year'], how='left')
 
+# =====================================================================
+# 6. Jakość wód kąpielowych (Krajowa - sdg_14_40)
+# =====================================================================
+print("Pobieranie jakości wód kąpielowych...")
+df_water_raw = eurostat.get_data_df('sdg_14_40')
+df_water_nuts0 = filter_balkan_nuts0(df_water_raw)
+
+# Bezpieczne filtrowanie wskaźnika (np. udział wód o doskonałej jakości - 'EXC' lub ogółem)
+mask_water = pd.Series(True, index=df_water_nuts0.index)
+if 'wat_qual' in df_water_nuts0.columns:
+    mask_water &= (df_water_nuts0['wat_qual'] == 'EXC')
+if 'c_env' in df_water_nuts0.columns:
+    mask_water &= (df_water_nuts0['c_env'] == 'TOTAL')
+
+df_wat = df_water_nuts0[mask_water]
+water_long = melt_and_filter(df_wat, 'Wody_Doskonała_Jakość_NUTS0')
+
+# =====================================================================
+# Łączenie wód kąpielowych z Master DataFrame
+# =====================================================================
+water_long = water_long.rename(columns={'geo': 'NUTS0'})
+water_long = water_long.drop_duplicates(subset=['NUTS0', 'Year'])
+
+master_df = pd.merge(master_df, water_long, on=['NUTS0', 'Year'], how='left')
+
 print("Liczba wierszy po poprawionym złączeniu:", len(master_df))
 print(master_df.head(15))
 
