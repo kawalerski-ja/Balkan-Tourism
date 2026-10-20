@@ -134,6 +134,20 @@ for yr, val in serbia_water_data.items():
 
 print("Uzupełżnienie ręczne zakończone sukcesem. Kształt ramki:", master_df.shape)
 
+#Dodanie danych o przestępczości
+df_prze = (eurostat.get_data_df('crim_gen_reg'))
+df_prze = df_prze[['geo\\TIME_PERIOD','2020', '2021', '2022', '2023', '2024']]
+df_prze = filter_balkan_nuts2(df_prze)
+df_prze = df_prze.melt(id_vars=['geo\TIME_PERIOD'], value_vars=['2020', '2021', '2022', '2023', '2024'], var_name='Year', value_name='Crime_Rate')
+
+#dodanie danych o przestępczości do master_df
+df_prze['Year'] = df_prze['Year'].astype(int)
+master_df = pd.merge(master_df, df_prze, left_on=['geo', 'Year'], right_on=['geo\\TIME_PERIOD', 'Year'], how='left')
+
+
+nights_tot_long = melt_and_filter(df_tot, 'Noclegi_Ogolem')
+
+
 # 1. Zamiana braków w ruchu lotniczym na 0 (tam, gdzie region nie obsługuje lotów)
 if 'Ruch_Lotniczy' in master_df.columns:
     master_df['Ruch_Lotniczy'] = master_df['Ruch_Lotniczy'].fillna(0)
@@ -147,3 +161,6 @@ master_df = master_df.dropna()
 print(f"Liczba wierszy po oczyszczeniu: {len(master_df)}")
 
 master_df.to_excel("baza_balkany.xlsx", index=False)
+
+
+
